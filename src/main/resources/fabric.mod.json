@@ -3,15 +3,15 @@
 	"id": "fairy-rings",
 	"version": "${version}",
 	"name": "Fairy Rings",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Adds fairy rings to the world!",
 	"authors": [
-		"Me!"
+		"zooi"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/mestiez/FairyRings",
+		"sources": "https://github.com/mestiez/FairyRings"
 	},
-	"license": "CC0-1.0",
+	"license": "GNU GPL v3.0",
 	"icon": "icon.png",
 	"environment": "*",
 	"entrypoints": {
