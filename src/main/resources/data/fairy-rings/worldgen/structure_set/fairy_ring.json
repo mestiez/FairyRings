@@ -1,0 +1,14 @@
+{
+    "structures": [
+        {
+            "structure": "fairy-rings:fairy_ring",
+            "weight": 24
+        }
+    ],
+    "placement": {
+        "type": "minecraft:random_spread",
+        "spacing": 25,
+        "separation": 5,
+        "salt": 3467912
+    }
+}

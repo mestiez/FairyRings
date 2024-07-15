@@ -1,0 +1,26 @@
+{
+  "haunt_generic": {
+    "sounds": [
+      "fairy-rings:haunt_1",
+      "fairy-rings:haunt_2",
+      "fairy-rings:haunt_3",
+      "fairy-rings:haunt_4"
+    ]
+  },
+  "haunt_fire": {
+    "sounds": [
+      "fairy-rings:haunt_fire"
+    ]
+  },
+  "spooky": {
+    "sounds": [
+      "fairy-rings:spooky_1",
+      "fairy-rings:spooky_2"
+    ]
+  },
+  "shrine_low": {
+    "sounds": [
+      "fairy-rings:shrine_low"
+    ]
+  }
+}
