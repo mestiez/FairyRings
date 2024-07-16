@@ -12,15 +12,21 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
+import net.fabricmc.fabric.api.loot.v2.LootTableSource;
+import net.fabricmc.fabric.api.registry.CompostingChanceRegistry;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
+import net.minecraft.loot.LootManager;
 import net.minecraft.loot.LootPool;
+import net.minecraft.loot.LootTable;
 import net.minecraft.loot.LootTables;
 import net.minecraft.loot.condition.LootCondition;
 import net.minecraft.loot.condition.LootConditionType;
@@ -33,10 +39,12 @@ import net.minecraft.loot.function.LootFunctionTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.resource.ResourceManager;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.Text;
@@ -48,6 +56,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.gen.feature.TreeConfiguredFeatures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,11 +80,48 @@ public class FairyRings implements ModInitializer {
         }
     }
 
+    public static class BlocksItems {
+        public static class Blocks {
+            public static Block WHITE_MUSHROOM;
+        }
+
+        public static class Items {
+            public static Item WHITE_MUSHROOM;
+        }
+
+        private static void initialise() {
+            // white mushroom
+            {
+                var id = Identifier.of(MOD_ID, "white_mushroom");
+                Blocks.WHITE_MUSHROOM = Registry.register(Registries.BLOCK, id,
+                        new MushroomPlantLightBlock(
+                                AbstractBlock.Settings.create()
+                                        .mapColor(MapColor.BROWN)
+                                        .noCollision()
+                                        .ticksRandomly()
+                                        .breakInstantly()
+                                        .sounds(BlockSoundGroup.GRASS)
+                                        .postProcess(net.minecraft.block.Blocks::always)
+                                        .pistonBehavior(PistonBehavior.DESTROY),
+                                TreeConfiguredFeatures.HUGE_BROWN_MUSHROOM
+                        ));
+                var item = new BlockItem(Blocks.WHITE_MUSHROOM, new Item.Settings().food((new FoodComponent.Builder()).hunger(1).saturationModifier(0.3F).build()));
+                Items.WHITE_MUSHROOM = Registry.register(Registries.ITEM, id, item);
+                CompostingChanceRegistry.INSTANCE.add(Items.WHITE_MUSHROOM, 0.65f);
+
+                ItemGroupEvents.modifyEntriesEvent(ItemGroups.NATURAL).register(content -> {
+                    content.add(Items.WHITE_MUSHROOM);
+                });
+            }
+        }
+    }
+
     @Override
     public void onInitialize() {
         ServerTickEvents.END_SERVER_TICK.register(this::onServerTick);
         ServerLivingEntityEvents.AFTER_DEATH.register(this::onEntityDeath);
         SoundEvents.initialise();
+        BlocksItems.initialise();
 
         PlayerBlockBreakEvents.AFTER.register(this::onPlayerBreakBlock);
         UseBlockCallback.EVENT.register(this::onPlayerUseBlock);
@@ -175,8 +221,7 @@ public class FairyRings implements ModInitializer {
                 if (value > 0) {
                     var prev = playerState.haunting;
                     playerState.haunting = Math.max(0, playerState.haunting - value * 0.25f);
-                    if (prev > playerState.haunting)
-                    {
+                    if (prev > playerState.haunting) {
                         playerState.usedShrineChunks.add(chunkId);
                         player.playSound(SoundEvents.SHRINE_LOW, SoundCategory.BLOCKS, 0.6f, player.getRandom().nextFloat() * 0.1f + 1);
                     }
@@ -462,7 +507,7 @@ public class FairyRings implements ModInitializer {
     private static class ChanceLootCondition implements LootCondition {
         private float chance = 0.1f;
 
-        public ChanceLootCondition(float chance){
+        public ChanceLootCondition(float chance) {
             this.chance = chance;
         }
 
