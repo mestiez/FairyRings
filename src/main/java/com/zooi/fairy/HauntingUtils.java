@@ -1,4 +1,4 @@
-package com.zooi;
+package com.zooi.fairy;
 
 import net.minecraft.block.*;
 import net.minecraft.entity.EntityType;
@@ -19,8 +19,6 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Vec3d;
-
-import java.util.List;
 
 public class HauntingUtils {
     public static final double HAUNTING_CHANCE_PER_TICK = 0.0007;
@@ -86,7 +84,7 @@ public class HauntingUtils {
                             var block = state.getBlock();
                             if (block.getTranslationKey().endsWith("planks")) { // TODO slow
                                 playSoundOnlyFor(player, pos.toCenterPos(),
-                                        FairyRings.SoundEvents.SPOOKY, SoundCategory.BLOCKS, 0.2f, player.getRandom().nextFloat() * 0.1F + 0.9F);
+                                        FairyRings.SoundEvents.SPOOKY, SoundCategory.BLOCKS, 0.5f, player.getRandom().nextFloat() * 0.1F + 0.9F);
                                 return;
                             }
                         }
@@ -167,7 +165,7 @@ public class HauntingUtils {
                 wolf.setAngryAt(player.getUuid());
                 wolf.setAngerTime(500);
                 wolf.setSitting(false);
-                FairyRings.LOGGER.info("Cursed {}'s pet {}", player, wolf.getName());
+                FairyRings.LOGGER.debug("Cursed {}'s pet {}", player, wolf.getName());
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.zooi;
+package com.zooi.fairy;
 
 import net.fabricmc.api.ClientModInitializer;
 

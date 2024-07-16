@@ -1,4 +1,4 @@
-package com.zooi;
+package com.zooi.fairy;
 
 import net.minecraft.util.math.Vec3i;
 

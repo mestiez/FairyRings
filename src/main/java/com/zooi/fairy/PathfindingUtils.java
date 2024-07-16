@@ -1,4 +1,4 @@
-package com.zooi;
+package com.zooi.fairy;
 
 import net.minecraft.block.*;
 import net.minecraft.entity.ai.pathing.NavigationType;
@@ -8,7 +8,6 @@ import net.minecraft.world.BlockView;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.PriorityQueue;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class PathfindingUtils {
@@ -26,7 +25,7 @@ public class PathfindingUtils {
 
         while (!openSet.isEmpty()) {
             if (iterationsRemaining-- <= 0) {
-                FairyRings.LOGGER.info("Out of iterations");
+                FairyRings.LOGGER.debug("Out of iterations");
                 result.Distance = Integer.MAX_VALUE;
                 result.Obstructed = true;
                 return result;

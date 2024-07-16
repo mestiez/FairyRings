@@ -16,13 +16,13 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.zooi.FairyRings"
+          "com.zooi.fairy.FairyRings"
 		],
 		"client": [
-			"com.zooi.FairyRingsClient"
+			"com.zooi.fairy.FairyRingsClient"
 		],
 		"fabric-datagen": [
-			"com.zooi.FairyRingsDataGenerator"
+          "com.zooi.fairy.FairyRingsDataGenerator"
 		]
 	},
 	"mixins": [

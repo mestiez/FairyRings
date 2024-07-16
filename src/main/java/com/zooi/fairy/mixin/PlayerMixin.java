@@ -1,23 +1,18 @@
-package com.zooi.mixin;
+package com.zooi.fairy.mixin;
 
+import com.zooi.fairy.FairyRings;
+import com.zooi.fairy.HauntingUtils;
+import com.zooi.fairy.PathfindingUtils;
+import com.zooi.fairy.PersistentStateManager;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LightningEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.WrittenBookItem;
-import net.minecraft.network.packet.s2c.play.OpenWrittenBookS2CPacket;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
-import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
-import com.zooi.*;
 
 @Mixin(ServerPlayerEntity.class)
 public class PlayerMixin {
@@ -29,7 +24,7 @@ public class PlayerMixin {
         var time = world.getTimeOfDay() % 24000;
 
         if (time >= 0 && time <= 40) {
-            FairyRings.LOGGER.info("Player woke up");
+            FairyRings.LOGGER.debug("Player woke up");
 
             var newBedPos = player.getSpawnPointPosition();
             var state = PersistentStateManager.getPlayerState(player);
@@ -42,7 +37,7 @@ public class PlayerMixin {
                     if (world.isChunkLoaded(oldChunk.x, oldChunk.z)) {
                         var result = PathfindingUtils.query(world, newBedPos, p);
                         if (!result.Obstructed) {
-                            FairyRings.LOGGER.info("Bed at {} is reachable from here! Player not build a new room.", oldBedPos);
+                            FairyRings.LOGGER.debug("Bed at {} is reachable from here! Player not build a new room.", oldBedPos);
                             state.haunting += HauntingUtils.HauntValues.SLEEP_SAME_ROOM;
                             sameRoom = true;
                         }
@@ -51,7 +46,7 @@ public class PlayerMixin {
 
                 // add to bed set
                 if (!state.pastBedLocations.add(newBedPos)) {
-                    FairyRings.LOGGER.info("Player slept in the same bed");
+                    FairyRings.LOGGER.debug("Player slept in the same bed");
                     state.haunting += HauntingUtils.HauntValues.SLEEP_SAME_BED;
 
                     var bolt = new LightningEntity(EntityType.LIGHTNING_BOLT, world);
@@ -64,7 +59,7 @@ public class PlayerMixin {
                 // check for "sleep under sky" penalty
                 var underSky = false;
                 if (world.isSkyVisible(newBedPos)) {
-                    FairyRings.LOGGER.info("Player slept under the sky");
+                    FairyRings.LOGGER.debug("Player slept under the sky");
                     underSky = true;
                     state.haunting += HauntingUtils.HauntValues.SLEEP_UNDER_SKY;
                 }

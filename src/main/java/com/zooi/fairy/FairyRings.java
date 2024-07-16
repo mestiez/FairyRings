@@ -1,4 +1,4 @@
-package com.zooi;
+package com.zooi.fairy;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -15,12 +15,9 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.pattern.BlockPatternBuilder;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
 import net.minecraft.loot.LootPool;
@@ -28,7 +25,6 @@ import net.minecraft.loot.LootTables;
 import net.minecraft.loot.condition.LootCondition;
 import net.minecraft.loot.condition.LootConditionType;
 import net.minecraft.loot.condition.LootConditionTypes;
-import net.minecraft.loot.condition.RandomChanceLootCondition;
 import net.minecraft.loot.context.LootContext;
 import net.minecraft.loot.entry.ItemEntry;
 import net.minecraft.loot.function.LootFunction;
@@ -155,32 +151,24 @@ public class FairyRings implements ModInitializer {
                 return ActionResult.PASS;
 
             if (!(flowerPot.getContent() instanceof FlowerBlock) && player.getStackInHand(hand).getItem() instanceof BlockItem blockItem) {
-                LOGGER.info("{} put flower in pot!", player.getName());
+                LOGGER.debug("{} put flower in pot!", player.getName());
                 var platform = world.getBlockState(pos.down()).getBlock();
                 int value = 0;
                 if (platform.equals(Blocks.GOLD_BLOCK)) {
-                    LOGGER.info("Gold platform!");
                     value = 5;
                 } else if (platform.equals(Blocks.EMERALD_BLOCK)) {
-                    LOGGER.info("Emerald platform!");
                     value = 3;
                 } else if (platform.equals(Blocks.DIAMOND_BLOCK)) {
-                    LOGGER.info("Diamond platform!");
                     value = 10;
                 } else if (platform.equals(Blocks.COPPER_BLOCK)) {
-                    LOGGER.info("Copper platform!");
                     value = 2;
                 } else if (platform.equals(Blocks.IRON_BLOCK)) {
-                    LOGGER.info("Iron platform!");
                     value = 2;
                 } else if (platform.equals(Blocks.LAPIS_BLOCK)) {
-                    LOGGER.info("Lapis platform!");
                     value = 3;
                 } else if (platform.equals(Blocks.REDSTONE_BLOCK)) {
-                    LOGGER.info("Redstone platform!");
                     value = 1;
                 } else if (platform.equals(Blocks.NETHERITE_BLOCK)) {
-                    LOGGER.info("Netherite platform!");
                     value = 20;
                 }
 
@@ -190,7 +178,7 @@ public class FairyRings implements ModInitializer {
                     if (prev > playerState.haunting)
                     {
                         playerState.usedShrineChunks.add(chunkId);
-                        player.playSound(SoundEvents.SHRINE_LOW, SoundCategory.BLOCKS, 0.2f, player.getRandom().nextFloat() * 0.1f + 1);
+                        player.playSound(SoundEvents.SHRINE_LOW, SoundCategory.BLOCKS, 0.6f, player.getRandom().nextFloat() * 0.1f + 1);
                     }
                 }
             }
@@ -245,7 +233,7 @@ public class FairyRings implements ModInitializer {
                         }
                         return false;
                     });
-                    LOGGER.info("Piece of fairy ring destroyed? {}", childBroken);
+                    LOGGER.debug("Piece of fairy ring destroyed? {}", childBroken);
 
                     if (childBroken) {
                         player.playSound(SoundEvents.HAUNT_GENERIC, SoundCategory.BLOCKS, 0.5f, player.getRandom().nextFloat() * 0.1f + 1);
@@ -331,14 +319,14 @@ public class FairyRings implements ModInitializer {
                 return 0;
             }
 
-            LOGGER.info(String.valueOf(state.pastBedLocations.size()));
+            LOGGER.debug(String.valueOf(state.pastBedLocations.size()));
 
             var world = src.getWorld();
             for (var bedA : state.pastBedLocations)
                 for (var bedB : state.pastBedLocations) {
                     if (bedA != bedB) {
                         var result = PathfindingUtils.query(world, new BlockPos(bedA), new BlockPos(bedB));
-                        LOGGER.info("Obstructed?: {}", result.Obstructed);
+                        LOGGER.debug("Obstructed?: {}", result.Obstructed);
                         src.sendFeedback(() -> Text.literal("%s to %s is obstructed?: %s".formatted(bedA, bedB, result.Obstructed)), false);
                     }
                 }
@@ -409,7 +397,7 @@ public class FairyRings implements ModInitializer {
     }
 
     private void triggerHauntingEvent(ServerPlayerEntity player, float hauntLevel) {
-        LOGGER.info("Haunting event for player {} with haunt level {}", player.getName(), hauntLevel);
+        LOGGER.debug("Haunting event for player {} with haunt level {}", player.getName(), hauntLevel);
 
         var random = player.getRandom();
         var didSomething = false;
@@ -440,7 +428,7 @@ public class FairyRings implements ModInitializer {
                 didSomething = true;
                 HauntingUtils.hauntBurnBed(player);
                 mute = true;
-                player.playSound(SoundEvents.HAUNT_FIRE, SoundCategory.AMBIENT, 0.2f, player.getRandom().nextFloat() * 0.1f + 1);
+                player.playSound(SoundEvents.HAUNT_FIRE, SoundCategory.AMBIENT, 0.5f, player.getRandom().nextFloat() * 0.1f + 1);
             }
         }
 
@@ -468,7 +456,7 @@ public class FairyRings implements ModInitializer {
         }
 
         if (!mute && didSomething && player.getRandom().nextFloat() > 0.7f)
-            player.playSound(SoundEvents.HAUNT_GENERIC, SoundCategory.AMBIENT, 0.2f, player.getRandom().nextFloat() * 0.1f + 1);
+            player.playSound(SoundEvents.HAUNT_GENERIC, SoundCategory.AMBIENT, 0.5f, player.getRandom().nextFloat() * 0.1f + 1);
     }
 
     private static class ChanceLootCondition implements LootCondition {
