@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 public class PathfindingUtils {
     public static Result query(BlockView world, BlockPos from, BlockPos to) {
         var result = new Result();
-        var cameFrom = new HashMap<BlockPos, BlockPos>();
+//        var cameFrom = new HashMap<BlockPos, BlockPos>();
         var gScore = new HashMap<BlockPos, Integer>();
         var fScore = new HashMap<BlockPos, Integer>();
         var openSet = new PriorityQueue<BlockPos>(Comparator.comparingInt(o -> fScore.getOrDefault(o, Integer.MAX_VALUE)));
@@ -45,7 +45,7 @@ public class PathfindingUtils {
 
                 var tentativeGScore = gScore.getOrDefault(current, Integer.MAX_VALUE) + current.getManhattanDistance(neighbour);
                 if (tentativeGScore < gScore.getOrDefault(neighbour, Integer.MAX_VALUE)) {
-                    cameFrom.put(neighbour, current);
+//                    cameFrom.put(neighbour, current);
                     gScore.put(neighbour, tentativeGScore);
                     fScore.put(neighbour, tentativeGScore + heuristicDistance(neighbour, to));
                     if (!openSet.contains(neighbour)) {
