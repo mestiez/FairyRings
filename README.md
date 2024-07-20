@@ -5,4 +5,5 @@ This is a simple mod that adds pink petal "fairy rings" to the world. In real li
 Fairy rings are relatively frequent and may show up in plains and meadows. It is believed that disrupting a fairy ring causes bad luck, and is associated with demons, devils, and witches.
 
 [Modrinth](https://modrinth.com/mod/fairy-rings)
+
 [CurseForge](https://www.curseforge.com/minecraft/mc-mods/fairy-rings)
