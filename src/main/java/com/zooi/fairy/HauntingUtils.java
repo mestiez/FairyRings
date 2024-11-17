@@ -245,11 +245,13 @@ public class HauntingUtils {
         var rand = player.getServerWorld().getRandom();
         int duration = rand.nextBetween(5, 30) * 20;
 
-        switch (rand.nextBetween(0, 3)) {
+        switch (rand.nextBetween(0, 5)) {
             case 0 -> player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, duration));
             case 1 -> player.addStatusEffect(new StatusEffectInstance(StatusEffects.NAUSEA, duration));
             case 2 -> player.addStatusEffect(new StatusEffectInstance(StatusEffects.WEAKNESS, duration));
             case 3 -> player.addStatusEffect(new StatusEffectInstance(StatusEffects.HUNGER, duration));
+            case 4 -> player.addStatusEffect(new StatusEffectInstance(StatusEffects.UNLUCK, duration));
+            case 5 -> player.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, duration));
         }
     }
 

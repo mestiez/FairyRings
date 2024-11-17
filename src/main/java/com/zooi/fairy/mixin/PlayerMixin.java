@@ -1,13 +1,13 @@
 package com.zooi.fairy.mixin;
 
-import com.zooi.fairy.FairyRings;
-import com.zooi.fairy.HauntingUtils;
-import com.zooi.fairy.PathfindingUtils;
-import com.zooi.fairy.PersistentStateManager;
+import com.zooi.fairy.*;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LightningEntity;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.structure.StructureTemplate;
 import net.minecraft.util.math.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -27,27 +27,27 @@ public class PlayerMixin {
             FairyRings.LOGGER.debug("Player woke up");
 
             var newBedPos = player.getSpawnPointPosition();
-            var state = PersistentStateManager.getPlayerState(player);
-            if (state.brokeFairyRing) {
+            var playerHauntState = PersistentStateManager.getPlayerState(player);
+            if (playerHauntState.brokeFairyRing) {
                 // pathfind to other beds to find if the player has built a new room or something
                 var sameRoom = false;
-                for (var oldBedPos : state.pastBedLocations) {
+                for (var oldBedPos : playerHauntState.pastBedLocations) {
                     var p = new BlockPos(oldBedPos);
                     var oldChunk = world.getChunk(p).getPos();
                     if (world.isChunkLoaded(oldChunk.x, oldChunk.z)) {
                         var result = PathfindingUtils.query(world, newBedPos, p);
                         if (!result.Obstructed) {
-                            FairyRings.LOGGER.debug("Bed at {} is reachable from here! Player not build a new room.", oldBedPos);
-                            state.haunting += HauntingUtils.HauntValues.SLEEP_SAME_ROOM;
+                            FairyRings.LOGGER.debug("Bed at {} is reachable from here! Player did not build a new room.", oldBedPos);
+                            playerHauntState.haunting += HauntingUtils.HauntValues.SLEEP_SAME_ROOM;
                             sameRoom = true;
                         }
                     }
                 }
 
                 // add to bed set
-                if (!state.pastBedLocations.add(newBedPos)) {
+                if (!playerHauntState.pastBedLocations.add(newBedPos)) {
                     FairyRings.LOGGER.debug("Player slept in the same bed");
-                    state.haunting += HauntingUtils.HauntValues.SLEEP_SAME_BED;
+                    playerHauntState.haunting += HauntingUtils.HauntValues.SLEEP_SAME_BED;
 
                     var bolt = new LightningEntity(EntityType.LIGHTNING_BOLT, world);
                     bolt.setCosmetic(true);
@@ -61,11 +61,21 @@ public class PlayerMixin {
                 if (world.isSkyVisible(newBedPos)) {
                     FairyRings.LOGGER.debug("Player slept under the sky");
                     underSky = true;
-                    state.haunting += HauntingUtils.HauntValues.SLEEP_UNDER_SKY;
+                    playerHauntState.haunting += HauntingUtils.HauntValues.SLEEP_UNDER_SKY;
                 }
 
                 if (underSky || sameRoom) {
                     player.playSound(FairyRings.SoundEvents.HAUNT_GENERIC, SoundCategory.AMBIENT, 0.3f, player.getRandom().nextFloat() * 0.1f + 0.6f);
+                }
+
+                if (playerHauntState.haunting > 5 && world.getRandom().nextFloat() >= 0.99f) {
+                    var target = CaveUtils.findCaveUnder(world, player.getBlockPos());
+                    FairyRings.LOGGER.debug("Attempt to teleport to {}", target);
+                    if (target != null) {
+                        var t = target.toCenterPos();
+                        player.teleport(t.x, t.y, t.z);
+                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 200));
+                    }
                 }
             }
         }

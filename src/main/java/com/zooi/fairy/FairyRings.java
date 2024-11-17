@@ -36,6 +36,8 @@ import net.minecraft.loot.entry.ItemEntry;
 import net.minecraft.loot.function.LootFunction;
 import net.minecraft.loot.function.LootFunctionType;
 import net.minecraft.loot.function.LootFunctionTypes;
+import net.minecraft.particle.DustParticleEffect;
+import net.minecraft.particle.ParticleEffect;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
@@ -224,6 +226,12 @@ public class FairyRings implements ModInitializer {
                     if (prev > playerState.haunting) {
                         playerState.usedShrineChunks.add(chunkId);
                         player.playSound(SoundEvents.SHRINE_LOW, SoundCategory.BLOCKS, 0.6f, player.getRandom().nextFloat() * 0.1f + 1);
+
+                        var xM = world.getRandom().nextFloat() * 2 - 1;
+                        var yM = world.getRandom().nextFloat() * 2 - 1;
+                        var zM = world.getRandom().nextFloat() * 2 - 1;
+
+                        world.addParticle(DustParticleEffect.DEFAULT, true, pos.getX(), pos.getY(), pos.getZ(), xM, yM, zM);
                     }
                 }
             }
@@ -478,8 +486,12 @@ public class FairyRings implements ModInitializer {
         }
 
         if (hauntLevel >= 10) {
-            HauntingUtils.hauntEnvironmentLifeDrain(player);
-            didSomething = true;
+            if (random.nextFloat() > 0.95f)
+            {
+                HauntingUtils.hauntEnvironmentLifeDrain(player);
+                didSomething = true;
+            }
+            
             // no need to set didSomething from this point forward!!
             if (random.nextFloat() > 0.5f)
                 HauntingUtils.hauntSpoilFood(player);
