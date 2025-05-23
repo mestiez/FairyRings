@@ -81,7 +81,7 @@ public class PathfindingUtils {
         if (block instanceof DoorBlock || block instanceof FenceGateBlock || block instanceof TrapdoorBlock || block instanceof FluidBlock)
             return Integer.MAX_VALUE;
 
-        if (!state.canPathfindThrough(world, pos, NavigationType.AIR))
+        if (!state.canPathfindThrough(NavigationType.AIR))
             return Integer.MAX_VALUE;
 
         // okay, we can definitely pass through this block
@@ -92,7 +92,7 @@ public class PathfindingUtils {
         var neighbours = getNeighbours(pos).toList(); // TODO slow
         int openNeighbours = 0;
         for (var neighbour : neighbours)
-            if (world.getBlockState(neighbour).canPathfindThrough(world, pos, NavigationType.AIR))
+            if (world.getBlockState(neighbour).canPathfindThrough(NavigationType.AIR))
                 openNeighbours++;
 
         if (openNeighbours <= 3)

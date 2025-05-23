@@ -11,8 +11,8 @@ import net.minecraft.world.WorldView;
 import net.minecraft.world.gen.feature.ConfiguredFeature;
 
 public class MushroomPlantLightBlock extends MushroomPlantBlock {
-    public MushroomPlantLightBlock(Settings settings, RegistryKey<ConfiguredFeature<?, ?>> featureKey) {
-        super(settings, featureKey);
+    public MushroomPlantLightBlock(RegistryKey<ConfiguredFeature<?, ?>> featureKey, Settings settings) {
+        super(featureKey, settings);
     }
 
     @Override

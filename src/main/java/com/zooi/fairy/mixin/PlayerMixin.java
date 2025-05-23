@@ -7,7 +7,6 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
-import net.minecraft.structure.StructureTemplate;
 import net.minecraft.util.math.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,7 +25,7 @@ public class PlayerMixin {
         if (time >= 0 && time <= 40) {
             FairyRings.LOGGER.debug("Player woke up");
 
-            var newBedPos = player.getSpawnPointPosition();
+            var newBedPos = player.getWorldSpawnPos(world, player.getBlockPos());
             var playerHauntState = PersistentStateManager.getPlayerState(player);
             if (playerHauntState.brokeFairyRing) {
                 // pathfind to other beds to find if the player has built a new room or something
@@ -65,7 +64,7 @@ public class PlayerMixin {
                 }
 
                 if (underSky || sameRoom) {
-                    player.playSound(FairyRings.SoundEvents.HAUNT_GENERIC, SoundCategory.AMBIENT, 0.3f, player.getRandom().nextFloat() * 0.1f + 0.6f);
+                    player.playSoundToPlayer(FairyRings.SoundEvents.HAUNT_GENERIC, SoundCategory.AMBIENT, 0.3f, player.getRandom().nextFloat() * 0.1f + 0.6f);
                 }
 
                 // spawn underground
@@ -74,7 +73,7 @@ public class PlayerMixin {
                     FairyRings.LOGGER.debug("Attempt to teleport to {}", target);
                     if (target != null) {
                         var t = target.toCenterPos();
-                        player.teleport(t.x, t.y, t.z);
+                        player.teleport(t.x, t.y, t.z, false);
                         player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 200));
                     }
                 }

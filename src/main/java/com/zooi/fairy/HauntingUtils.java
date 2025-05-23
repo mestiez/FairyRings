@@ -1,6 +1,8 @@
 package com.zooi.fairy;
 
+import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
 import net.minecraft.block.*;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -15,10 +17,11 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.event.GameEvent;
 
 public class HauntingUtils {
     public static final double HAUNTING_CHANCE_PER_TICK = 0.0007;
@@ -31,7 +34,7 @@ public class HauntingUtils {
 
     public static void hauntBurnBed(ServerPlayerEntity player) {
         var world = player.getEntityWorld();
-        var spawnPointPosition = player.getSpawnPointPosition();
+        var spawnPointPosition = player.getWorldSpawnPos(player.getServerWorld(), player.getBlockPos());
 
         if (spawnPointPosition == null)
             return;
@@ -118,15 +121,27 @@ public class HauntingUtils {
                             door.setOpen(player, world, state, pos, true);
                         }
                     } else if (block instanceof FenceGateBlock fenceGate && !state.get(FenceGateBlock.OPEN)) {
-                        fenceGate.onUse(state, world, pos, player, player.preferredHand, new BlockHitResult(player.getPos(), player.getMovementDirection(), pos, false));
-                        world.playSound(null, pos, SoundEvents.BLOCK_FENCE_GATE_OPEN, SoundCategory.BLOCKS);
+                        if (state.get(FenceGateBlock.OPEN)) {
+                            state = state.with(FenceGateBlock.OPEN, false);
+                            world.setBlockState(pos, state, 10);
+                        } else {
+                            Direction direction = player.getHorizontalFacing();
+                            if (state.get(FenceGateBlock.FACING) == direction.getOpposite())
+                                state = state.with(FenceGateBlock.FACING, direction);
+                            state = state.with(FenceGateBlock.OPEN, true);
+                            world.setBlockState(pos, state, 10);
+                        }
+
+                        boolean bl = state.get(FenceGateBlock.OPEN);
+                        world.playSound(player, pos, bl ? SoundEvents.BLOCK_FENCE_GATE_OPEN : SoundEvents.BLOCK_FENCE_GATE_CLOSE, SoundCategory.BLOCKS, 1.0F, world.getRandom().nextFloat() * 0.1F + 0.9F);
+                        world.emitGameEvent(player, bl ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);
                     } else if (block instanceof ButtonBlock button) {
                         // TODO get block set type somehow
                         world.playSound(null, pos, SoundEvents.BLOCK_STONE_BUTTON_CLICK_ON, SoundCategory.BLOCKS);
-                        button.powerOn(state, world, pos);
+                        button.powerOn(state, world, pos, player);
                     } else if (block instanceof LeverBlock lever) {
                         world.playSound(null, pos, SoundEvents.BLOCK_LEVER_CLICK, SoundCategory.BLOCKS, 1.0f, 0.4f);
-                        lever.togglePower(state, world, pos);
+                        lever.togglePower(state, world, pos, player);
                     } else if (block instanceof CandleBlock candle) {
                         if (state.get(CandleBlock.LIT))
                             CandleBlock.extinguish(player, state, world, pos);
@@ -137,12 +152,17 @@ public class HauntingUtils {
     public static void hauntSpoilFood(ServerPlayerEntity player) {
         var world = player.getEntityWorld();
         var inv = player.getInventory();
-        for (var stack : inv.main) {
-            var item = stack.getItem();
-            var food = item.getFoodComponent();
+        for (var stack : inv) {
+            if (!stack.contains(DataComponentTypes.FOOD))
+                continue;
 
-            if (food != null && player.getRandom().nextBoolean()) {
-                if (food.isMeat()) { // we spoil the meat
+            if (player.getRandom().nextFloat() > 0.8f) {
+                if (stack.getItem() == Items.POTATO) {
+                    var slot = inv.getSlotWithStack(stack);
+                    var amount = stack.getCount();
+                    inv.removeStack(slot);
+                    inv.setStack(slot, new ItemStack(Items.POISONOUS_POTATO, amount));
+                } else if (stack.isIn(ConventionalItemTags.COOKED_MEAT_FOODS) || stack.isIn(ConventionalItemTags.RAW_MEAT_FOODS)) { // we spoil the meat
                     var slot = inv.getSlotWithStack(stack);
                     var amount = stack.getCount();
                     inv.removeStack(slot);

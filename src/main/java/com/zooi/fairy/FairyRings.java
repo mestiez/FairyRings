@@ -6,27 +6,25 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.api.ModInitializer;
-
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
-import net.fabricmc.fabric.api.loot.v2.LootTableSource;
+import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.fabricmc.fabric.api.registry.CompostingChanceRegistry;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.FoodComponent;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
-import net.minecraft.loot.LootManager;
 import net.minecraft.loot.LootPool;
-import net.minecraft.loot.LootTable;
 import net.minecraft.loot.LootTables;
 import net.minecraft.loot.condition.LootCondition;
 import net.minecraft.loot.condition.LootConditionType;
@@ -36,17 +34,15 @@ import net.minecraft.loot.entry.ItemEntry;
 import net.minecraft.loot.function.LootFunction;
 import net.minecraft.loot.function.LootFunctionType;
 import net.minecraft.loot.function.LootFunctionTypes;
-import net.minecraft.particle.DustParticleEffect;
-import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
-import net.minecraft.resource.ResourceManager;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
@@ -59,7 +55,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.explosion.Explosion;
 import net.minecraft.world.gen.feature.TreeConfiguredFeatures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,6 +94,7 @@ public class FairyRings implements ModInitializer {
                 var id = Identifier.of(MOD_ID, "white_mushroom");
                 Blocks.WHITE_MUSHROOM = Registry.register(Registries.BLOCK, id,
                         new MushroomPlantLightBlock(
+                                TreeConfiguredFeatures.HUGE_BROWN_MUSHROOM,
                                 AbstractBlock.Settings.create()
                                         .mapColor(MapColor.BROWN)
                                         .noCollision()
@@ -106,10 +102,9 @@ public class FairyRings implements ModInitializer {
                                         .breakInstantly()
                                         .sounds(BlockSoundGroup.GRASS)
                                         .postProcess(net.minecraft.block.Blocks::always)
-                                        .pistonBehavior(PistonBehavior.DESTROY),
-                                TreeConfiguredFeatures.HUGE_BROWN_MUSHROOM
+                                        .pistonBehavior(PistonBehavior.DESTROY)
                         ));
-                var item = new BlockItem(Blocks.WHITE_MUSHROOM, new Item.Settings().food((new FoodComponent.Builder()).hunger(1).saturationModifier(0.3F).build()));
+                var item = new BlockItem(Blocks.WHITE_MUSHROOM, new Item.Settings().food((new FoodComponent.Builder()).nutrition(1).saturationModifier(0.3F).build()));
                 Items.WHITE_MUSHROOM = Registry.register(Registries.ITEM, id, item);
                 CompostingChanceRegistry.INSTANCE.add(Items.WHITE_MUSHROOM, 0.65f);
 
@@ -134,8 +129,8 @@ public class FairyRings implements ModInitializer {
             registerCommands(dispatcher);
         });
 
-        LootTableEvents.MODIFY.register((resourceManager, lootManager, id, tableBuilder, source) -> {
-            if (source.isBuiltin() && LootTables.SHIPWRECK_SUPPLY_CHEST.equals(id)) {
+        LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {
+            if (source.isBuiltin() && LootTables.SHIPWRECK_SUPPLY_CHEST.equals(key)) {
                 LootPool.Builder poolBuilder = LootPool.builder().with(ItemEntry.builder(Items.WRITTEN_BOOK)).conditionally(new ChanceLootCondition(0.02f));
                 poolBuilder.apply(new LootFunction() {
                     @Override
@@ -153,8 +148,8 @@ public class FairyRings implements ModInitializer {
             }
         });
 
-        LootTableEvents.MODIFY.register((resourceManager, lootManager, id, tableBuilder, source) -> {
-            if (source.isBuiltin() && LootTables.RUINED_PORTAL_CHEST.equals(id)) {
+        LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {
+            if (source.isBuiltin() && LootTables.RUINED_PORTAL_CHEST.equals(key)) {
                 LootPool.Builder poolBuilder = LootPool.builder().with(ItemEntry.builder(Items.PAPER)).conditionally(new ChanceLootCondition(0.08f));
                 poolBuilder.apply(new LootFunction() {
                     @Override
@@ -170,7 +165,7 @@ public class FairyRings implements ModInitializer {
                                 "Shatter the circle of the fey, and cursed rooms shall mark each day",
                         };
                         final String chosen = options[lootContext.getRandom().nextBetween(0, options.length)];
-                        stack.setCustomName(Text.literal(chosen));
+                        stack.set(DataComponentTypes.CUSTOM_NAME, Text.literal(chosen));
                         return stack;
                     }
                 });
@@ -227,7 +222,7 @@ public class FairyRings implements ModInitializer {
                     playerState.haunting = Math.max(0, playerState.haunting - value * 0.25f);
                     if (prev > playerState.haunting) {
                         playerState.usedShrineChunks.add(chunkId);
-                        player.playSound(SoundEvents.SHRINE_LOW, SoundCategory.BLOCKS, 0.6f, player.getRandom().nextFloat() * 0.1f + 1);
+                        player.playSoundToPlayer(SoundEvents.SHRINE_LOW, SoundCategory.BLOCKS, 0.6f, player.getRandom().nextFloat() * 0.1f + 1);
 
                         {
                             var xM = world.getRandom().nextFloat() * 2 - 1;
@@ -236,7 +231,7 @@ public class FairyRings implements ModInitializer {
                             var cpos = player.getPos();
                             var w = player.getEntityWorld();
                             for (int i = 0; i < 16; i++)
-                                w.addImportantParticle(ParticleTypes.SMOKE, cpos.x, cpos.y, cpos.z, 0, 0, 0);
+                                w.addImportantParticleClient(ParticleTypes.SMOKE, cpos.x, cpos.y, cpos.z, 0, 0, 0);
                         }
                     }
                 }
@@ -248,7 +243,7 @@ public class FairyRings implements ModInitializer {
 
     // check for fairy ring destruction
     private void onPlayerBreakBlock(World world, PlayerEntity player, BlockPos blockPos, BlockState blockState, BlockEntity blockEntity) {
-        if (world.getServer() == null)
+        if (world.getServer() == null || !(world instanceof ServerWorld serverWorld))
             return;
 
         if (blockState.getBlock() instanceof FlowerbedBlock) { // player broke flower petals so this might be a fairy ring!
@@ -257,7 +252,7 @@ public class FairyRings implements ModInitializer {
             if (playerState.brokeFairyRing) // no need to check haunted players
                 return;
 
-            var registry = world.getRegistryManager().get(RegistryKeys.STRUCTURE);
+            var registry = world.getRegistryManager().getOrThrow(RegistryKeys.STRUCTURE);
             var fairy_ring = registry.get(Identifier.of(MOD_ID, "fairy_ring"));
             final int maxDist = 8;
             var chunksToCheck = new WorldChunk[5];
@@ -295,13 +290,12 @@ public class FairyRings implements ModInitializer {
                     LOGGER.debug("Piece of fairy ring destroyed? {}", childBroken);
 
                     if (childBroken) {
-                        player.playSound(SoundEvents.HAUNT_GENERIC, SoundCategory.BLOCKS, 0.5f, player.getRandom().nextFloat() * 0.1f + 1);
-                        player.damage(world.getDamageSources().magic(), 1);
-//                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 500));
+                        player.playSoundToPlayer(SoundEvents.HAUNT_GENERIC, SoundCategory.BLOCKS, 0.5f, player.getRandom().nextFloat() * 0.1f + 1);
+                        player.damage(serverWorld, world.getDamageSources().magic(), 1);
                         player.setFrozenTicks(100);
 
                         playerState.brokeFairyRing = true;
-                        PersistentStateManager.getServerState(world.getServer()).destroyedFairyRings.add(chunk.getPos());
+                        PersistentStateManager.getServerState(serverWorld.getServer()).destroyedFairyRings.add(chunk.getPos());
                     }
                 });
             }
@@ -487,7 +481,7 @@ public class FairyRings implements ModInitializer {
                 didSomething = true;
                 HauntingUtils.hauntBurnBed(player);
                 mute = true;
-                player.playSound(SoundEvents.HAUNT_FIRE, SoundCategory.AMBIENT, 0.5f, player.getRandom().nextFloat() * 0.1f + 1);
+                player.playSoundToPlayer(SoundEvents.HAUNT_FIRE, SoundCategory.AMBIENT, 0.5f, player.getRandom().nextFloat() * 0.1f + 1);
             }
         }
 
@@ -518,7 +512,7 @@ public class FairyRings implements ModInitializer {
         }
 
         if (!mute && didSomething && player.getRandom().nextFloat() > 0.7f)
-            player.playSound(SoundEvents.HAUNT_GENERIC, SoundCategory.AMBIENT, 0.5f, player.getRandom().nextFloat() * 0.1f + 1);
+            player.playSoundToPlayer(SoundEvents.HAUNT_GENERIC, SoundCategory.AMBIENT, 0.5f, player.getRandom().nextFloat() * 0.1f + 1);
     }
 
     private static class ChanceLootCondition implements LootCondition {
