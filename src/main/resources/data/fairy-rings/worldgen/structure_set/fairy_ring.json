@@ -2,7 +2,7 @@
     "structures": [
         {
             "structure": "fairy-rings:fairy_ring",
-            "weight": 24
+            "weight": 1
         }
     ],
     "placement": {

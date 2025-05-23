@@ -79,11 +79,48 @@ public class FairyRings implements ModInitializer {
         }
     }
 
+    public static class BlocksItems {
+        public static class Blocks {
+            public static Block WHITE_MUSHROOM;
+        }
+
+        public static class Items {
+            public static Item WHITE_MUSHROOM;
+        }
+
+        private static void initialise() {
+            // white mushroom
+            {
+                var id = Identifier.of(MOD_ID, "white_mushroom");
+                Blocks.WHITE_MUSHROOM = Registry.register(Registries.BLOCK, id,
+                        new MushroomPlantLightBlock(
+                                TreeConfiguredFeatures.HUGE_BROWN_MUSHROOM,
+                                AbstractBlock.Settings.create()
+                                        .mapColor(MapColor.BROWN)
+                                        .noCollision()
+                                        .ticksRandomly()
+                                        .breakInstantly()
+                                        .sounds(BlockSoundGroup.GRASS)
+                                        .postProcess(net.minecraft.block.Blocks::always)
+                                        .pistonBehavior(PistonBehavior.DESTROY)
+                        ));
+                var item = new BlockItem(Blocks.WHITE_MUSHROOM, new Item.Settings().food((new FoodComponent.Builder()).nutrition(1).saturationModifier(0.3F).build()));
+                Items.WHITE_MUSHROOM = Registry.register(Registries.ITEM, id, item);
+                CompostingChanceRegistry.INSTANCE.add(Items.WHITE_MUSHROOM, 0.65f);
+
+                ItemGroupEvents.modifyEntriesEvent(ItemGroups.NATURAL).register(content -> {
+                    content.add(Items.WHITE_MUSHROOM);
+                });
+            }
+        }
+    }
+
     @Override
     public void onInitialize() {
         ServerTickEvents.END_SERVER_TICK.register(this::onServerTick);
         ServerLivingEntityEvents.AFTER_DEATH.register(this::onEntityDeath);
         SoundEvents.initialise();
+        BlocksItems.initialise();
 
         PlayerBlockBreakEvents.AFTER.register(this::onPlayerBreakBlock);
         UseBlockCallback.EVENT.register(this::onPlayerUseBlock);

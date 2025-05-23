@@ -7,6 +7,6 @@ import net.minecraft.client.render.RenderLayer;
 public class FairyRingsClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
-		BlockRenderLayerMap.INSTANCE.putBlock(FairyRings.BlocksItems.Blocks.WHITE_MUSHROOM, RenderLayer.getCutout());
+		//BlockRenderLayerMap.INSTANCE.putBlock(FairyRings.BlocksItems.Blocks.WHITE_MUSHROOM, RenderLayer.getCutout());
 	}
 }

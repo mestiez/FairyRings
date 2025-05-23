@@ -11,17 +11,29 @@ import net.minecraft.world.*;
 
 import java.util.*;
 
+/**
+ * Stores all world-wide Fairy mod data.
+ *
+ * Public API is unchanged – only the persistence plumbing differs.
+ */
 public class PersistentStateManager extends PersistentState {
-    private static final String NBT_PLAYERS = "fairyring-players";
-    private static final String NBT_DESTROYED_FAIRY_RINGS = "fairyring-destroyed-fairy-rings";
-    private static final String NBT_HAUNTING = "fairyring-haunting";
-    private static final String NBT_BED_LOCATIONS = "fairyring-bed-locations";
-    private static final String NBT_SHRINE_CHUNKS = "fairyring-shrine-chunks";
-    private static final String NBT_BROKE_FAIRY_RING = "fairyring-broke-fairy-ring";
+    /* ---------------- keys ---------------- */
+    private static final String NBT_PLAYERS                = "wellidoor-players";
+    private static final String NBT_DESTROYED_FAIRY_RINGS  = "wellidoor-destroyed-fairy-rings";
+    private static final String NBT_HAUNTING               = "wellidoor-haunting";
+    private static final String NBT_BED_LOCATIONS          = "wellidoor-bed-locations";
+    private static final String NBT_SHRINE_CHUNKS          = "wellidoor-shrine-chunks";
+    private static final String NBT_BROKE_FAIRY_RING       = "wellidoor-broke-fairy-ring";
 
-    public final Map<UUID, PlayerData> players = new HashMap<>();
-    public final Set<ChunkPos> destroyedFairyRings = new HashSet<>();
+    /* ---------------- data ---------------- */
+    public final Map<UUID, PlayerData> players            = new HashMap<>();
+    public final Set<ChunkPos>         destroyedFairyRings = new HashSet<>();
 
+    /* -------------------------------------------------------------------------
+       §1  –  Serialisation helpers
+       ---------------------------------------------------------------------- */
+
+    /** Encode this state to an NBT blob (no side-effects). */
     private NbtCompound toNbt() {
         var nbt = new NbtCompound();
 
@@ -64,6 +76,7 @@ public class PersistentStateManager extends PersistentState {
         return nbt;
     }
 
+    /** Re-hydrate from NBT (wrapper param required by new signature but unused here). */
     private static PersistentStateManager fromNbt(NbtCompound tag, RegistryWrapper.WrapperLookup ignored) {
         var state = new PersistentStateManager();
 
@@ -73,8 +86,8 @@ public class PersistentStateManager extends PersistentState {
             var pd = new PlayerData();
             var pTag = playersNBT.getCompoundOrEmpty(key);
 
-            pd.haunting = pTag.getFloat(NBT_HAUNTING, 0);
-            pd.brokeFairyRing = pTag.getBoolean(NBT_BROKE_FAIRY_RING, false);
+            pd.haunting        = pTag.getFloat(NBT_HAUNTING, 0);
+            pd.brokeFairyRing  = pTag.getBoolean(NBT_BROKE_FAIRY_RING, false);
 
             var beds = pTag.getListOrEmpty(NBT_BED_LOCATIONS);
             beds.forEach(e -> {
@@ -98,20 +111,30 @@ public class PersistentStateManager extends PersistentState {
         return state;
     }
 
+    /* -------------------------------------------------------------------------
+       §2  –  Codec & PersistentStateType registration
+       ---------------------------------------------------------------------- */
+
+    /** Thin wrapper – use NBT as the on-disk format to avoid rewriting all the logic. */
     private static final Codec<PersistentStateManager> CODEC =
             NbtCompound.CODEC.xmap(tag -> fromNbt(tag, null), PersistentStateManager::toNbt);
 
+    /** One immutable descriptor – file will be “wellidoor-state” in the world folder. */
     public static final PersistentStateType<PersistentStateManager> TYPE =
             new PersistentStateType<>(
-                    "fairyring-state",
-                    ctx -> new PersistentStateManager(),
-                    ctx -> CODEC,
-                    DataFixTypes.SAVED_DATA_RANDOM_SEQUENCES
-            );
+                    "wellidoor-state",                       // save-file key
+                    ctx -> new PersistentStateManager(),     // empty constructor (new world)
+                    ctx -> CODEC,                            // <-- serialiser
+                    DataFixTypes.SAVED_DATA_RANDOM_SEQUENCES // fixers
+            );                                               // :contentReference[oaicite:6]{index=6}
+
+    /* -------------------------------------------------------------------------
+       §3  –  Convenience accessors matching the old API
+       ---------------------------------------------------------------------- */
 
     public static PersistentStateManager getServerState(MinecraftServer server) {
         var mgr = Objects.requireNonNull(server.getWorld(World.OVERWORLD)).getPersistentStateManager();
-        var state = mgr.getOrCreate(TYPE);
+        var state = mgr.getOrCreate(TYPE);                               // new API, no id arg :contentReference[oaicite:7]{index=7}
         state.markDirty();
         return state;
     }
@@ -119,5 +142,9 @@ public class PersistentStateManager extends PersistentState {
     public static PlayerData getPlayerState(LivingEntity player) {
         return getServerState(Objects.requireNonNull(player.getWorld().getServer()))
                 .players.computeIfAbsent(player.getUuid(), u -> new PlayerData());
+    }
+
+    public static void markDirty(MinecraftServer server) {
+        getServerState(server).markDirty();
     }
 }

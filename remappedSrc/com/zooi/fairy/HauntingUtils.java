@@ -34,11 +34,10 @@ public class HauntingUtils {
 
     public static void hauntBurnBed(ServerPlayerEntity player) {
         var world = player.getEntityWorld();
-        var respawn = player.getRespawn();
-        if (respawn == null)
-            return;
+        var spawnPointPosition = player.getWorldSpawnPos(player.getServerWorld(), player.getBlockPos());
 
-        var spawnPointPosition = respawn.pos();
+        if (spawnPointPosition == null)
+            return;
 
         var chunkX = ChunkSectionPos.getSectionCoord(spawnPointPosition.getX());
         var chunkZ = ChunkSectionPos.getSectionCoord(spawnPointPosition.getZ());

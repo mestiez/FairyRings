@@ -6,7 +6,6 @@ import net.minecraft.entity.LightningEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.network.SpawnLocating;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.math.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,10 +24,8 @@ public class PlayerMixin {
 
         if (time >= 0 && time <= 40) {
             FairyRings.LOGGER.debug("Player woke up");
-            var respawn = player.getRespawn();
-            if (respawn == null)
-                return;
-            var newBedPos = respawn.pos();
+
+            var newBedPos = player.getWorldSpawnPos(world, player.getBlockPos());
             var playerHauntState = PersistentStateManager.getPlayerState(player);
             if (playerHauntState.brokeFairyRing) {
                 // pathfind to other beds to find if the player has built a new room or something
@@ -77,7 +74,7 @@ public class PlayerMixin {
                     if (target != null) {
                         var t = target.toCenterPos();
                         player.teleport(t.x, t.y, t.z, false);
-                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 100));
+                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, 200));
                     }
                 }
             }
