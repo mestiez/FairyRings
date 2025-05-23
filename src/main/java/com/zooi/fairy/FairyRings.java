@@ -38,6 +38,7 @@ import net.minecraft.loot.function.LootFunctionType;
 import net.minecraft.loot.function.LootFunctionTypes;
 import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleEffect;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
@@ -58,6 +59,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.explosion.Explosion;
 import net.minecraft.world.gen.feature.TreeConfiguredFeatures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,7 +169,7 @@ public class FairyRings implements ModInitializer {
                                 "Break the fairy's circle bright, and walls you'll build anew each night",
                                 "Shatter the circle of the fey, and cursed rooms shall mark each day",
                         };
-                        final String chosen = options[lootContext.getRandom().nextBetween(0, 2)];
+                        final String chosen = options[lootContext.getRandom().nextBetween(0, options.length)];
                         stack.setCustomName(Text.literal(chosen));
                         return stack;
                     }
@@ -227,11 +229,15 @@ public class FairyRings implements ModInitializer {
                         playerState.usedShrineChunks.add(chunkId);
                         player.playSound(SoundEvents.SHRINE_LOW, SoundCategory.BLOCKS, 0.6f, player.getRandom().nextFloat() * 0.1f + 1);
 
-                        var xM = world.getRandom().nextFloat() * 2 - 1;
-                        var yM = world.getRandom().nextFloat() * 2 - 1;
-                        var zM = world.getRandom().nextFloat() * 2 - 1;
-
-                        world.addParticle(DustParticleEffect.DEFAULT, true, pos.getX(), pos.getY(), pos.getZ(), xM, yM, zM);
+                        {
+                            var xM = world.getRandom().nextFloat() * 2 - 1;
+                            var yM = world.getRandom().nextFloat() * 2 - 1;
+                            var zM = world.getRandom().nextFloat() * 2 - 1;
+                            var cpos = player.getPos();
+                            var w = player.getEntityWorld();
+                            for (int i = 0; i < 16; i++)
+                                w.addImportantParticle(ParticleTypes.SMOKE, cpos.x, cpos.y, cpos.z, 0, 0, 0);
+                        }
                     }
                 }
             }
@@ -486,12 +492,11 @@ public class FairyRings implements ModInitializer {
         }
 
         if (hauntLevel >= 10) {
-            if (random.nextFloat() > 0.95f)
-            {
+            if (random.nextFloat() > 0.95f) {
                 HauntingUtils.hauntEnvironmentLifeDrain(player);
                 didSomething = true;
             }
-            
+
             // no need to set didSomething from this point forward!!
             if (random.nextFloat() > 0.5f)
                 HauntingUtils.hauntSpoilFood(player);

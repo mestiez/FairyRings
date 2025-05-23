@@ -68,7 +68,8 @@ public class PlayerMixin {
                     player.playSound(FairyRings.SoundEvents.HAUNT_GENERIC, SoundCategory.AMBIENT, 0.3f, player.getRandom().nextFloat() * 0.1f + 0.6f);
                 }
 
-                if (playerHauntState.haunting > 5 && world.getRandom().nextFloat() >= 0.99f) {
+                // spawn underground
+                if (playerHauntState.haunting > 5 && world.getRandom().nextFloat() >= 0.95f) {
                     var target = CaveUtils.findCaveUnder(world, player.getBlockPos());
                     FairyRings.LOGGER.debug("Attempt to teleport to {}", target);
                     if (target != null) {
